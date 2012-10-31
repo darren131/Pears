@@ -3,7 +3,7 @@
 * Pears functions and customizations
 **/
 
-// Setup for CSS STYLE_TYPEs
+// Setup for CSS preprocessors
 // Possible options here:
 // css, sass, scss, less, stylus
 define("STYLE_TYPE", "scss");
