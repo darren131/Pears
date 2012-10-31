@@ -18,7 +18,10 @@
 <?php if ( have_posts() ) while ( have_posts() ) : the_post(); ?>
 
 <style id="s" type="text/css">
-<?php $key="css"; echo get_post_meta($post->ID, $key, true); ?>
+<?php 
+// convert SCSS to CSS
+echo convertScss("http://alloy.divshot.com/compile", get_post_meta($post->ID, STYLE_TYPE, true));
+?>
 </style>
 
 <div id="pattern" class="mod group">
@@ -40,9 +43,9 @@
 			</div>
 			
 			<div id="style" class="mod">
-				<h3 class="label">CSS</h3> <a href="#" class="clip" title="select code for copying"><img src="<?php bloginfo('template_directory'); ?>/images/icon-copy.png" alt="copy" /></a>
-				<textarea id="css-code" class="mod-ta">
-<?php $key="css"; echo get_post_meta($post->ID, $key, true); ?>
+				<h3 class="label"><?php echo STYLE_TYPE ?></h3> <a href="#" class="clip" title="select code for copying"><img src="<?php bloginfo('template_directory'); ?>/images/icon-copy.png" alt="copy" /></a>
+				<textarea id="csss-code" class="mod-ta">
+<?php echo get_post_meta($post->ID, STYLE_TYPE, true); ?>
 				</textarea>
 			</div>
 		</div>

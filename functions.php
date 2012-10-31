@@ -1,5 +1,99 @@
 <?php
 /**
+* Pears functions and customizations
+**/
+
+// Setup for CSS STYLE_TYPEs
+// Possible options here:
+// css, sass, scss, less, stylus
+define("STYLE_TYPE", "scss");
+define("COMPASS", true); // if you're using Sass/scss, will you be using compass?
+
+add_action( 'add_meta_boxes', 'pears_add_meta_box' );
+add_action( 'save_post', 'pears_save_post' );
+
+function pears_add_meta_box() {
+
+    add_meta_box( 
+        'pears',
+        'Pears',
+        'pears_meta_box',
+        'post',
+        'normal',
+        'high'
+    );
+
+}
+
+function pears_meta_box( $post ) {
+  	wp_nonce_field( plugin_basename( __FILE__ ), 'pears_noncename' );
+
+  	$html = get_post_meta($post->ID,'html',true);
+  	$style = get_post_meta($post->ID,STYLE_TYPE,true);
+
+	echo '<p>These fields are for the HTML markup and '.STYLE_TYPE.' styles.  The post body can be used for notes.</p>';
+	echo '<label for="html">HTML</label>';
+  	echo '<p><textarea id="html" name="html" rows="20" cols="90" />' . $html . '</textarea></p>';
+	echo '<label for="style">'.strtoupper(STYLE_TYPE).'</label>	';
+  	echo '<p><textarea id="style" name="style" rows="20" cols="90" />' . $style . '</textarea></p>';
+}
+
+function pears_save_post( $post_id ) {
+
+	// Ignore if doing an autosave
+  	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
+  	    return;
+			
+	// verify data came from pears meta box
+  	if ( !wp_verify_nonce( $_POST['pears_noncename'], plugin_basename( __FILE__ ) ) )
+		return;			
+	
+  	// Check user permissions
+  	if ( 'post' == $_POST['post_type'] ) {
+    	if ( !current_user_can( 'edit_page', $post_id ) )
+        	return;
+  	}
+  	else{
+    	if ( !current_user_can( 'edit_post', $post_id ) )
+	        return;
+  	}
+  	
+  $html_data = $_POST['html'];
+	update_post_meta($post_id, 'html', $html_data);
+	
+	$style_data = $_POST['style'];
+	update_post_meta($post_id, STYLE_TYPE, $style_data);
+}
+
+// call css STYLE_TYPE convertion API
+function convertScss($url, $source){
+	if (STYLE_TYPE != 'css') {
+		$postfields = array();
+		$postfields["type"] = STYLE_TYPE;
+		$postfields["source"] = (COMPASS) ? "@import 'compass';\n\n".$source : $source;
+
+		$the_query = http_build_query($postfields);
+
+		$session = curl_init();
+
+		curl_setopt($session, CURLOPT_URL, $url);
+		curl_setopt($session, CURLOPT_POST, true);
+		curl_setopt($session, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($session, CURLOPT_POSTFIELDS, http_build_query($postfields));
+
+		$data = curl_exec($session);
+		curl_close($session);
+
+	} else {
+		$data = $source;
+	}
+	return $data;
+
+}
+
+
+
+/**
  * TwentyTen functions and definitions
  *
  * Sets up the theme and provides some helper functions. Some helper functions
@@ -506,59 +600,3 @@ function twentyten_posted_in() {
 	);
 }
 endif;
-
-add_action( 'add_meta_boxes', 'pears_add_meta_box' );
-add_action( 'save_post', 'pears_save_post' );
-
-function pears_add_meta_box() {
-
-    add_meta_box( 
-        'pears',
-        'Pears',
-        'pears_meta_box',
-        'post',
-        'normal',
-        'high'
-    );
-
-}
-
-function pears_meta_box( $post ) {
-  	wp_nonce_field( plugin_basename( __FILE__ ), 'pears_noncename' );
-
-  	$html = get_post_meta($post->ID,'html',true);
-  	$css = get_post_meta($post->ID,'css',true);
-
-	echo '<p>These fields are for the HTML markup and CSS styles.  The post body can be used for notes.</p>';
-	echo '<label for="html">HTML</label>';
-  	echo '<p><textarea id="html" name="html" rows="20" cols="90" />' . $html . '</textarea></p>';
-	echo '<label for="css">CSS</label>	';
-  	echo '<p><textarea id="css" name="css" rows="20" cols="90" />' . $css . '</textarea></p>';
-}
-
-function pears_save_post( $post_id ) {
-
-	// Ignore if doing an autosave
-  	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) 
-  	    return;
-			
-	// verify data came from pears meta box
-  	if ( !wp_verify_nonce( $_POST['pears_noncename'], plugin_basename( __FILE__ ) ) )
-		return;			
-	
-  	// Check user permissions
-  	if ( 'post' == $_POST['post_type'] ) {
-    	if ( !current_user_can( 'edit_page', $post_id ) )
-        	return;
-  	}
-  	else{
-    	if ( !current_user_can( 'edit_post', $post_id ) )
-	        return;
-  	}
-  	
-  	$html_data = $_POST['html'];
-	update_post_meta($post_id, 'html', $html_data);
-	
-	$css_data = $_POST['css'];
-	update_post_meta($post_id, 'css', $css_data);
-}
